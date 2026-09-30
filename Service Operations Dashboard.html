@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Service Operations Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f3f5f4;--cd:#fff;--tx:#14201c;--mu:#63706a;--bd:#dde3e0;--ac:#0e7c66;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1512;--cd:#151f1b;--tx:#e6efeb;--mu:#8fa198;--bd:#25332d;--ac:#3fd1b0}}
+:root[data-theme="dark"]{--bg:#0d1512;--cd:#151f1b;--tx:#e6efeb;--mu:#8fa198;--bd:#25332d;--ac:#3fd1b0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Trebuchet MS","Segoe UI",sans-serif}
+main{max-width:1800px;margin:auto;padding:14px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font:700 22px Georgia,serif;margin:0}h2{font:600 14px Georgia,serif;margin:0 0 8px}
+button,.btn{background:var(--ac);color:var(--bg);border:0;border-radius:6px;padding:8px 12px;font:inherit;cursor:pointer}
+button.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.bar{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:10px;margin-bottom:12px}
+.fl{display:flex;flex-wrap:wrap;gap:8px}
+details{position:relative}summary{cursor:pointer;border:1px solid var(--bd);border-radius:6px;padding:6px 10px;list-style:none}
+summary b{color:var(--ac)}
+.opts{position:absolute;z-index:5;background:var(--cd);border:1px solid var(--bd);border-radius:6px;padding:8px;max-height:220px;overflow:auto;min-width:180px}
+.opts label{display:block;white-space:nowrap}
+.tl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:10px}.tl input{flex:1;min-width:140px;accent-color:var(--ac)}
+.k{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+@media(max-width:1000px){.k{grid-template-columns:repeat(2,1fr)}}
+.kp{background:var(--cd);border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:8px;padding:10px}
+.kp span{color:var(--mu);font-size:12px}.kp strong{display:block;font:700 22px Georgia,serif}.kp em{font-size:11px;color:var(--mu);font-style:normal}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:900px){.g2{grid-template-columns:minmax(0,1fr)}}
+.c{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:12px;min-width:0}
+.c div.h{height:290px;position:relative}.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:5px 7px;border:1px solid var(--bd);text-align:center}
+ul{margin:0;padding-left:18px}li{margin-bottom:8px;break-inside:avoid}#ins{columns:2 380px;column-gap:32px}.w{grid-column:1/-1}
+#msg{color:var(--mu);font-size:12px}
+</style></head><body><main>
+<header><div><h1>Service Operations Dashboard</h1><div id="msg">Showing demo data. Upload your Excel file to replace it.</div></div>
+<div class="fl"><label class="btn">Upload Excel<input id="up" type="file" accept=".xlsx,.xls,.csv" hidden></label><button class="g" id="demo">Load demo data</button><button class="g" id="rs">Reset filters</button><button class="g" id="th">Light / dark</button></div></header>
+<section class="bar"><div class="fl" id="fl"></div>
+<div class="tl"><b>Timeline</b><span id="t0"></span><input type="range" id="r0" min="0" value="0" aria-label="Start month"><input type="range" id="r1" min="0" value="0" aria-label="End month"><span id="t1"></span></div></section>
+<section class="k" id="k"></section>
+<section class="g2">
+<div class="c w"><h2>Revenue, profit and margin by month</h2><div class="h"><canvas id="c1"></canvas></div></div>
+<div class="c"><h2>Top 10 cities: revenue vs profit</h2><div class="h"><canvas id="c2"></canvas></div></div>
+<div class="c"><h2>Revenue mix by industry</h2><div class="h"><canvas id="c3"></canvas></div></div>
+<div class="c w"><h2>Profit margin heatmap: service category × technology</h2><div class="sc" id="hm"></div></div>
+<div class="c"><h2>Orders by segment and status</h2><div class="h"><canvas id="c5"></canvas></div></div>
+<div class="c"><h2>Service categories: revenue vs margin (bubble = quantity)</h2><div class="h"><canvas id="c6"></canvas></div></div>
+<div class="c"><h2>Service quality radar: SLA vs satisfaction</h2><div class="h"><canvas id="c7"></canvas></div></div>
+<div class="c"><h2>Support tickets vs satisfaction (per order)</h2><div class="h"><canvas id="c8"></canvas></div></div>
+<div class="c"><h2>Pareto: revenue by technology</h2><div class="h"><canvas id="c9"></canvas></div></div>
+<div class="c"><h2>Monthly SLA compliance and satisfaction</h2><div class="h"><canvas id="c10"></canvas></div></div>
+<div class="c w"><h2>Deep analysis</h2><ul id="ins"></ul></div>
+</section></main>
+<script>
+const F=['City','Industry','Service_Category','Technology','Customer_Segment','Order_Status','Data_Type'],N=['Quantity','Revenue_CAD','Cost_CAD','Profit_CAD','Support_Tickets','SLA_Compliance_Pct','Customer_Satisfaction'];
+const P=['#0e7c66','#e0812b','#4a6fd8','#c2416b','#8a6bd1','#d1a531','#2f9fb8','#7a8b3c'];
+let D=[],sel={},M=[],mi=[0,0],CH={};const $=i=>document.getElementById(i);
+const num=v=>+String(v).replace(/[^0-9.\-]/g,'')||0,fm=n=>Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(1)+'K':n.toFixed(0),$m=n=>'$'+fm(n);
+function td(v){if(v instanceof Date)return v;if(typeof v==='number')return new Date(Math.round((v-25569)*864e5));const d=new Date(v);return isNaN(d)?null:d}
+function load(rows,label){
+ D=rows.map(r=>{const o={};for(const k in r)o[k.trim()]=r[k];const d=td(o.Order_Date);if(!d)return null;
+  o.m=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');N.forEach(k=>o[k]=num(o[k]));
+  if(!('Profit_CAD' in r)&&o.Profit_CAD===0)o.Profit_CAD=o.Revenue_CAD-o.Cost_CAD;F.forEach(f=>o[f]=String(o[f]||'(blank)'));return o}).filter(Boolean);
+ if(!D.length){$('msg').textContent='No valid rows found. Check that Order_Date and the other headers match.';return}
+ if(Math.max(...D.map(x=>x.SLA_Compliance_Pct))<=1.5)D.forEach(x=>x.SLA_Compliance_Pct*=100);
+ M=[...new Set(D.map(x=>x.m))].sort();mi=[0,M.length-1];['r0','r1'].forEach((i,j)=>{$(i).max=M.length-1;$(i).value=mi[j]});
+ $('msg').textContent=label+': '+D.length.toLocaleString()+' rows loaded';buildF();render()}
+function buildF(){sel={};$('fl').innerHTML='';F.forEach(f=>{sel[f]=new Set();const u=[...new Set(D.map(x=>x[f]))].sort();
+ const d=document.createElement('details');d.innerHTML='<summary>'+f.replace('_',' ')+' <b id="n'+f+'"></b></summary><div class="opts">'+u.map(v=>'<label><input type="checkbox" data-f="'+f+'" value="'+v.replace(/"/g,'&quot;')+'"> '+v+'</label>').join('')+'</div>';$('fl').appendChild(d)})}
+$('fl').addEventListener('change',e=>{const t=e.target,s=sel[t.dataset.f];t.checked?s.add(t.value):s.delete(t.value);$('n'+t.dataset.f).textContent=s.size?'('+s.size+')':'';render()});
+['r0','r1'].forEach((i,j)=>$(i).addEventListener('input',()=>{mi[j]=+$(i).value;if(mi[0]>mi[1]){mi[1-j]=mi[j];$(['r0','r1'][1-j]).value=mi[j]}render()}));
+$('rs').onclick=()=>{document.querySelectorAll('#fl input').forEach(c=>c.checked=false);F.forEach(f=>{sel[f].clear();$('n'+f).textContent=''});mi=[0,M.length-1];$('r0').value=0;$('r1').value=M.length-1;render()};
+$('th').onclick=()=>{const r=document.documentElement,d=matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=(r.dataset.theme||(d?'dark':'light'))==='dark'?'light':'dark';render()};
+$('up').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const w=XLSX.read(r.result,{type:'array',cellDates:true}),rows=XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{defval:''});load(rows,f.name)}catch(x){$('msg').textContent='Could not read file: '+x.message}};r.readAsArrayBuffer(f)};
+$('demo').onclick=()=>load(demo(),'Demo data');
+const filt=()=>D.filter(r=>r.m>=M[mi[0]]&&r.m<=M[mi[1]]&&F.every(f=>!sel[f].size||sel[f].has(r[f])));
+const agg=r=>{const s=k=>r.reduce((a,x)=>a+x[k],0),n=r.length||1,rev=s('Revenue_CAD'),pr=s('Profit_CAD');return{n:r.length,rev,cost:s('Cost_CAD'),pr,q:s('Quantity'),t:s('Support_Tickets'),sla:s('SLA_Compliance_Pct')/n,cs:s('Customer_Satisfaction')/n,mg:rev?pr/rev*100:0}};
+const grp=(r,f)=>{const m=new Map();r.forEach(x=>{const k=typeof f==='function'?f(x):x[f];(m.get(k)||m.set(k,[]).get(k)).push(x)});return[...m]};
+const cor=(a,b)=>{const n=a.length,ma=a.reduce((x,y)=>x+y,0)/n,mb=b.reduce((x,y)=>x+y,0)/n;let s=0,x=0,y=0;a.forEach((v,i)=>{s+=(v-ma)*(b[i]-mb);x+=(v-ma)**2;y+=(b[i]-mb)**2});return x&&y?s/Math.sqrt(x*y):0};
+const mk=(id,c)=>{CH[id]&&CH[id].destroy();c.options=Object.assign({responsive:true,maintainAspectRatio:false},c.options);CH[id]=new Chart($(id),c)};
+function render(){
+ const cs=getComputedStyle(document.documentElement);Chart.defaults.color=cs.getPropertyValue('--mu');Chart.defaults.borderColor=cs.getPropertyValue('--bd');
+ $('t0').textContent=M[mi[0]];$('t1').textContent=M[mi[1]];
+ const R=filt(),A=agg(R);
+ $('k').innerHTML=[['Total revenue',$m(A.rev),'CAD'],['Total cost',$m(A.cost),'CAD'],['Total profit',$m(A.pr),'CAD'],['Profit margin',A.mg.toFixed(1)+'%','profit / revenue'],['Orders',A.n.toLocaleString(),'records'],['Units sold',fm(A.q),'quantity'],['Avg order value',$m(A.n?A.rev/A.n:0),'revenue / order'],['Support tickets',fm(A.t),(A.n?A.t/A.n:0).toFixed(2)+' per order'],['Avg SLA compliance',A.sla.toFixed(1)+'%','target 95%'],['Avg satisfaction',A.cs.toFixed(2),'mean score']].map(k=>'<div class="kp"><span>'+k[0]+'</span><strong>'+k[1]+'</strong><em>'+k[2]+'</em></div>').join('');
+ const gm=grp(R,'m').sort((a,b)=>a[0]<b[0]?-1:1),ma=gm.map(e=>agg(e[1])),L=gm.map(e=>e[0]);
+ mk('c1',{type:'bar',data:{labels:L,datasets:[{label:'Revenue',data:ma.map(a=>a.rev),backgroundColor:P[0]},{type:'line',label:'Profit',data:ma.map(a=>a.pr),borderColor:P[1],tension:.3},{type:'line',label:'Margin %',yAxisID:'y1',data:ma.map(a=>a.mg),borderColor:P[3],borderDash:[5,4],tension:.3}]},options:{scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}}});
+ const gc=grp(R,'City').map(e=>[e[0],agg(e[1])]).sort((a,b)=>b[1].rev-a[1].rev);const t10=gc.slice(0,10);
+ mk('c2',{type:'bar',data:{labels:t10.map(e=>e[0]),datasets:[{label:'Revenue',data:t10.map(e=>e[1].rev),backgroundColor:P[2]},{label:'Profit',data:t10.map(e=>e[1].pr),backgroundColor:P[1]}]},options:{indexAxis:'y'}});
+ const gi=grp(R,'Industry').map(e=>[e[0],agg(e[1])]).sort((a,b)=>b[1].rev-a[1].rev);
+ mk('c3',{type:'doughnut',data:{labels:gi.map(e=>e[0]),datasets:[{data:gi.map(e=>e[1].rev),backgroundColor:P,borderWidth:0}]},options:{plugins:{legend:{position:'right'}}}});
+ const sv=[...new Set(R.map(x=>x.Service_Category))].sort(),tc=[...new Set(R.map(x=>x.Technology))].sort();
+ $('hm').innerHTML='<table><tr><th></th>'+tc.map(t=>'<th>'+t+'</th>').join('')+'</tr>'+sv.map(s=>'<tr><th>'+s+'</th>'+tc.map(t=>{const a=agg(R.filter(x=>x.Service_Category===s&&x.Technology===t));if(!a.n)return'<td>–</td>';const v=Math.max(-1,Math.min(1,a.mg/40)),c=v>=0?'14,124,102':'194,65,107';return'<td style="background:rgba('+c+','+(Math.abs(v)*.7+.08)+')" title="'+a.n+' orders">'+a.mg.toFixed(1)+'%</td>'}).join('')+'</tr>').join('')+'</table>';
+ const sg=[...new Set(R.map(x=>x.Customer_Segment))].sort(),st=[...new Set(R.map(x=>x.Order_Status))].sort();
+ mk('c5',{type:'bar',data:{labels:sg,datasets:st.map((s,i)=>({label:s,backgroundColor:P[i%8],data:sg.map(g=>R.filter(x=>x.Customer_Segment===g&&x.Order_Status===s).length)}))},options:{scales:{x:{stacked:true},y:{stacked:true}}}});
+ const gs=grp(R,'Service_Category').map(e=>[e[0],agg(e[1])]),mq=Math.max(1,...gs.map(e=>e[1].q));
+ mk('c6',{type:'bubble',data:{datasets:gs.map((e,i)=>({label:e[0],backgroundColor:P[i%8]+'aa',data:[{x:e[1].rev,y:e[1].mg,r:Math.max(6,Math.sqrt(e[1].q/mq)*26)}]}))},options:{scales:{x:{title:{display:true,text:'Revenue (CAD)'}},y:{title:{display:true,text:'Margin %'}}}}});
+ const sc=gs.length&&Math.max(...R.map(x=>x.Customer_Satisfaction))<=5?20:Math.max(...R.map(x=>x.Customer_Satisfaction))<=10?10:1;
+ mk('c7',{type:'radar',data:{labels:gs.map(e=>e[0]),datasets:[{label:'SLA %',data:gs.map(e=>e[1].sla),borderColor:P[0],backgroundColor:P[0]+'33'},{label:'Satisfaction (scaled to 100)',data:gs.map(e=>e[1].cs*sc),borderColor:P[1],backgroundColor:P[1]+'33'}]},options:{scales:{r:{suggestedMin:50,suggestedMax:100}}}});
+ const step=Math.max(1,Math.floor(R.length/500)),pts=R.filter((x,i)=>i%step===0).map(x=>({x:x.Support_Tickets,y:x.Customer_Satisfaction}));
+ mk('c8',{type:'scatter',data:{datasets:[{label:'Orders',data:pts,backgroundColor:P[2]+'88'}]},options:{scales:{x:{title:{display:true,text:'Support tickets'}},y:{title:{display:true,text:'Satisfaction'}}}}});
+ const gt=grp(R,'Technology').map(e=>[e[0],agg(e[1]).rev]).sort((a,b)=>b[1]-a[1]),tot=gt.reduce((a,e)=>a+e[1],0)||1;let cu=0;
+ mk('c9',{type:'bar',data:{labels:gt.map(e=>e[0]),datasets:[{label:'Revenue',data:gt.map(e=>e[1]),backgroundColor:P[4]},{type:'line',label:'Cumulative %',yAxisID:'y1',data:gt.map(e=>(cu+=e[1])/tot*100),borderColor:P[1]}]},options:{scales:{y:{position:'left'},y1:{position:'right',max:100,grid:{drawOnChartArea:false}}}}});
+ mk('c10',{type:'line',data:{labels:L,datasets:[{label:'SLA %',data:ma.map(a=>a.sla),borderColor:P[0],tension:.3},{label:'Satisfaction',yAxisID:'y1',data:ma.map(a=>a.cs),borderColor:P[3],tension:.3}]},options:{scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}}});
+ insights(R,A,gc,gi,gs,ma,L,gt,tot,sv,tc)}
+function insights(R,A,gc,gi,gs,ma,L,gt,tot,sv,tc){
+ const o=[];if(R.length<3){$('ins').innerHTML='<li>Too few rows in the current selection. Widen the filters or timeline.</li>';return}
+ const g=gc.filter(e=>e[1].rev>0).sort((a,b)=>b[1].mg-a[1].mg);
+ if(g.length>1)o.push('<b>Cities:</b> '+g[0][0]+' has the best margin ('+g[0][1].mg.toFixed(1)+'%) and '+g[g.length-1][0]+' the weakest ('+g[g.length-1][1].mg.toFixed(1)+'%). The top '+Math.max(1,Math.ceil(gc.length*.2))+' of '+gc.length+' cities deliver '+(gc.slice(0,Math.max(1,Math.ceil(gc.length*.2))).reduce((a,e)=>a+e[1].rev,0)/(A.rev||1)*100).toFixed(0)+'% of revenue.');
+ if(gi.length)o.push('<b>Industry:</b> '+gi[0][0]+' is the largest, with '+(gi[0][1].rev/(A.rev||1)*100).toFixed(0)+'% of revenue and a '+gi[0][1].mg.toFixed(1)+'% margin.');
+ if(ma.length>1){const a=ma[ma.length-1].rev,b=ma[ma.length-2].rev;o.push('<b>Momentum:</b> '+L[L.length-1]+' revenue is '+$m(a)+', '+(b?((a/b-1)*100).toFixed(1)+'% vs':'compared with')+' '+L[L.length-2]+'.')}
+ if(ma.length>3){const v=ma.map(a=>a.rev),mu=v.reduce((a,b)=>a+b,0)/v.length,sd=Math.sqrt(v.reduce((a,b)=>a+(b-mu)**2,0)/v.length),an=L.filter((m,i)=>sd&&Math.abs(v[i]-mu)>2*sd);o.push('<b>Anomalies:</b> '+(an.length?'unusual revenue months (beyond 2 standard deviations): '+an.join(', '):'no months deviate more than 2 standard deviations from the average.'))}
+ const r=cor(R.map(x=>x.Support_Tickets),R.map(x=>x.Customer_Satisfaction));o.push('<b>Tickets vs satisfaction:</b> correlation is '+r.toFixed(2)+(Math.abs(r)<.2?', a weak link.':r<0?', so more tickets tend to go with lower satisfaction.':', so higher ticket volume goes with higher scores, which may reflect engaged customers.'));
+ const ls=gs.slice().sort((a,b)=>a[1].sla-b[1].sla)[0];if(ls)o.push('<b>SLA:</b> '+ls[0]+' has the lowest compliance ('+ls[1].sla.toFixed(1)+'%). '+gs.filter(e=>e[1].sla<95).length+' of '+gs.length+' service categories are below the 95% target.');
+ let k=0,ne=0;sv.forEach(s=>tc.forEach(t=>{const a=agg(R.filter(x=>x.Service_Category===s&&x.Technology===t));if(a.n){k++;if(a.pr<0)ne++}}));o.push('<b>Loss-making combinations:</b> '+ne+' of '+k+' service × technology pairs have negative profit.');
+ let c=0,n=0;for(const e of gt){c+=e[1];n++;if(c/tot>=.8)break}o.push('<b>Concentration:</b> '+n+' of '+gt.length+' technologies generate 80% of revenue.');
+ const q=grp(R,'Order_Status').sort((a,b)=>b[1].length-a[1].length)[0];o.push('<b>Order status:</b> "'+q[0]+'" is the most common ('+(q[1].length/R.length*100).toFixed(0)+'% of orders).');
+ $('ins').innerHTML=o.map(x=>'<li>'+x+'</li>').join('')}
+function demo(){let s=7;const r=()=>(s=(s*16807)%2147483647)/2147483647,p=a=>a[Math.floor(r()*a.length)];
+ const C=['Toronto','Mississauga','Ottawa','Calgary','Vancouver','Montreal','Halifax','Winnipeg'],I=['Finance','Healthcare','Retail','Manufacturing','Telecom'],S=['Managed Services','Cloud Migration','Cybersecurity','Consulting','Support'],T=['AWS','Azure','On-prem','Hybrid'],G=['Enterprise','SMB','Public Sector'],O=['Completed','Completed','Completed','In Progress','Cancelled'],rows=[];
+ for(let i=0;i<700;i++){const q=1+Math.floor(r()*20),rev=q*(400+r()*900),cost=rev*(.45+r()*.5);rows.push({Record_ID:i+1,Order_Date:new Date(Date.UTC(2024,Math.floor(r()*18),1+Math.floor(r()*28))),City:p(C),Industry:p(I),Service_Category:p(S),Technology:p(T),Customer_Segment:p(G),Quantity:q,Revenue_CAD:rev,Cost_CAD:cost,Profit_CAD:rev-cost,Support_Tickets:Math.floor(r()*8),SLA_Compliance_Pct:88+r()*12,Customer_Satisfaction:+(2.8+r()*2.2).toFixed(1),Order_Status:p(O),Data_Type:p(['Actual','Actual','Forecast'])})}return rows}
+load(demo(),'Demo data');
+</script></body></html>
